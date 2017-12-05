@@ -86,9 +86,9 @@ class Product{
        return json_encode($results);
    }
 
-public function update($id){
+public function update(){
     $query ="UPDATE products
-        SET name:=name,
+        SET name=:name,
             description=:description, 
             price=:price, 
             category_id=:category_id
