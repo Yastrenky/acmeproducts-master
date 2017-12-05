@@ -19,9 +19,8 @@ class Product{
     public function create(){
         try{
             $query = "INSERT INTO products
-            SET name=:name, description=:description , price=:price,
-            category_id=: category_id, created=:created";
-            $smtp = $this->conn->prepare($query);
+             SET name=:name, description=:description, price=:price,category_id=:category_id, created=:created";
+            $stmt = $this->conn->prepare($query);
 
             $name = htmlspecialchars(strip_tags($this->name));
             $description= htmlspecialchars(strip_tags($this->description));
@@ -29,12 +28,12 @@ class Product{
             $category_id = htmlspecialchars(strip_tags($this->category_id));
             
 
-            smtp->bindParam(':name',$name);
-            smtp->bindParam(':description',$description);
-            smtp->bindParam(':price',$price);
-            smtp->bindParam(':category_id',$category_id);
+            $stmt->bindParam(':name',$name);
+            $stmt->bindParam(':description',$description);
+            $stmt->bindParam(':price',$price);
+            $stmt->bindParam(':category_id',$category_id);
             
-            $create = date('Y-m-d H:i:s');
+            $created = date('Y-m-d H:i:s');
             $stmt->bindParam(':created', $created);
 
             if($stmt->execute()){
@@ -46,7 +45,7 @@ class Product{
 
         }
         catch(PDOException $exception){
-            die('ERR: '.$exception->getMessage());
+            die('ERROR: '.$exception->getMessage());
         }
     }
 
@@ -66,6 +65,8 @@ class Product{
         return json_encode($results);
     }
 
+
+
     public function readOne(){
         // Select one the data
         $query = "SELECT p.id, p.name, p.description, p.price, c.name as category_name
@@ -84,4 +85,52 @@ class Product{
 
        return json_encode($results);
    }
+
+public function update($id){
+    $query ="UPDATE products
+        SET name:=name,
+            description=:description, 
+            price=:price, 
+            category_id=:category_id
+        WHERE id=:id";
+        
+        $stmt = $this->conn->prepare($query);
+        
+                    $name = htmlspecialchars(strip_tags($this->name));
+                    $description= htmlspecialchars(strip_tags($this->description));
+                    $price = htmlspecialchars(strip_tags($this->price));
+                    $category_id = htmlspecialchars(strip_tags($this->category_id));
+                    $id = htmlspecialchars(strip_tags($this->id));
+
+
+                    $stmt->bindParam(':name',$name);
+                    $stmt->bindParam(':description',$description);
+                    $stmt->bindParam(':price',$price);
+                    $stmt->bindParam(':category_id',$category_id);
+                    $stmt->bindParam(':id',$id);
+
+                    if($stmt->execute()){
+                        return true;
+                    }
+                    else{
+                        return false;
+                    }
+}
+
+public function delete($ins){
+    $query ="DELETE FROM  products
+        WHERE id IN (:ins)";
+         $stmt = $this->conn->prepare($query);
+         $ins = htmlspecialchars(strip_tags($ins));
+
+ $stmt->bindParam(':ins',$ins);
+var_dump($stmt);
+ if($stmt->execute()){
+    return true;
+}
+else{
+    return false;
+}
+}
+
 }

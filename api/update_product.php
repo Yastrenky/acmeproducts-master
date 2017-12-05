@@ -20,5 +20,5 @@ if($_POST){
     $product->id = $_POST['id'];
 
 
-    echo $product->create()? 'true':'false';
+    echo $product->update()? 'true':'false';
 }

@@ -12,13 +12,12 @@ if($_POST){
     $db = $database->getConnection();
     $product = new Product($db);
 
-
-    $product->name = $_POST['name'];
-    $product->price = $_POST['price'];
-    $product->description = $_POST['description'];
-    $product->category_id = $_POST['category_id'];
-    $product->id = $_POST['id'];
+$ins ='';
+foreach($_POST['del_ids'] as $id){
+    $ins .="{$id}";
+}
 
 
-    echo $product->create()? 'true':'false';
+$ins =trim($ins,',');
+echo $product->delete($ins)? 'true':'false';
 }
