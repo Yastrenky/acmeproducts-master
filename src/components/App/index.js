@@ -1,33 +1,50 @@
 import React, { Component } from 'react';
+var qs = require('qs');
+function Categories({list,SearchHandleClick,DeleteHandleClick,AddCategory,handleChange}){
 
-function Categories({list,handleClick}){
-  
   return(
     <table className='products-list table table-hover' >
     <thead>
     <tr>
-     <th>ID</th>
      <th>Name</th> 
      <th>Description</th>
-     <th>Products</th>
+     <th></th>
+     <th></th>
+     <th></th>
+
     </tr>
     </thead>
     <tbody>
     {list.map(item=>(
       <tr key={item.id}>
-      <th >{item.id}</th>
       <th >{item.name}</th>
       <th >{item.description}</th>
-      <th ><button type="button" className="btn btn-primary"  onClick={()=>handleClick(item.id)}>>>></button></th>
+      <th ><button type="button" className="btn btn-success"  onClick={()=>SearchHandleClick(item.id)}><i className="fa fa-search" ></i></button></th>
+      <th ><button type="button" className="btn btn-warning"  onClick={()=>SearchHandleClick(item.id)}><i className="fa fa-edit" ></i></button></th>
+      <th ><button type="button" className="btn btn-danger"  onClick={()=>DeleteHandleClick(item.id)}><i className="material-icons" >delete_forever</i></button></th>
       </tr>
       ))}
+     
         </tbody>
+
+
+
     </table>
   )
 }
-function Products({list}){
-  
+function Products({list, returnButton}){
+  if(list.length===0){
+    return(
+      
+      <div>
+        <button type="button" className="btn btn-success return-btn" onClick={()=>returnButton()} ><i className="material-icons">keyboard_return</i></button>
+        <div>No products found...</div>
+        </div>
+    )
+  }
   return(
+    <div>
+    <button type="button" className="btn btn-success return-btn" onClick={()=>returnButton()} ><i className="material-icons">keyboard_return</i></button>
     <table className='products-list table table-hover' >
     <thead>
     <tr>
@@ -48,6 +65,7 @@ function Products({list}){
       ))}
         </tbody>
     </table>
+    </div>
   )
 }
 
@@ -56,17 +74,50 @@ class App extends Component {
     super(props);
  
     this.state = {
-      data:null,
-      position:"categories"
-      
+      inName:"",
+      inDescription:"",
+      data:"",
+      position:"categories",
+      page:0
     }
-    this.handleClick = this.handleClick.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+    this.SearchHandleClick = this.SearchHandleClick.bind(this);
+    this.DeleteHandleClick = this.DeleteHandleClick.bind(this);
+    this.AddCategory = this.AddCategory.bind(this);
     this.fetchSearchcategory = this.fetchSearchcategory.bind(this);
+    this.returnButtonHandle = this.returnButtonHandle.bind(this);
 
   }
-  handleClick(id) {
+  handleChange(e){
+this.setState({[e.target.name]:e.target.value})
+  }
+  AddCategory(){
+console.log("adding");
+var execute =this.fetchSearchcategory();
+
+fetch("http://localhost/acmeproducts-master/api/create_category.php",{
+ mode: 'cors',
+  headers: {
+    'Acept':'aplication/json',
+    "Content-Type": "application/x-www-form-urlencoded",
+
+  },
+   method: 'post',
+   body: qs.stringify({"name":this.state.inName,"description":this.state.inDescription})
+  
+  }).then(function(res){if(res.status===200)this.execute()})
+  .catch(function(res){ console.log(res) })
+}
+
+
+  returnButtonHandle(){
+    this.fetchSearchcategory();
+    this.setState({
+      position: "category"})
+  }
+  SearchHandleClick(id) {
     console.log(id);
-    fetch("http://127.0.0.1/acmeproducts-master/api/read_one_product.php?prod_id="+id ,{ method: 'GET'})
+    fetch("http://localhost/acmeproducts-master/api/read_one_product.php?prod_id="+id ,{ method: 'GET'})
     .then(response => response.json())
     .then(data => this.setState({
       data: data,
@@ -75,14 +126,24 @@ class App extends Component {
     .catch(e => e);
 
   }
-  fetchSearchcategory(){    
-    fetch("http://127.0.0.1/acmeproducts-master/api/read_all_categories.php" ,{ method: 'GET'})
-     .then(response => response.json())
-     .then(data => this.setState({data: data})
-     )
-     .catch(e => e);
-  }
+  DeleteHandleClick(id) {
+    console.log(id);
+    fetch("http://localhost/acmeproducts-master/api/delete_category.php?del_ids="+id ,{ method: 'GET'})
+    .then(response => response.json())
+   .then(this.fetchSearchcategory())
+    .catch(e => e);
 
+  }
+  fetchSearchcategory(){  
+
+   setTimeout(() => {
+    fetch("http://localhost/acmeproducts-master/api/read_all_categories.php" ,{ method: 'GET'})
+    .then(response => response.json())
+    .then(newData => this.setState({data: newData, position:"categories"}))
+    .catch(e => e);
+ 
+   },100); 
+  }
 
 
   
@@ -91,12 +152,12 @@ componentDidMount(){
 this.fetchSearchcategory();
 }
 
-  render() {
+render() {
 
     const data = this.state.data;
     const position = this.state.position;
-    console.log(data);
-    console.log(position);
+console.log(data)
+    console.log("render position "+position);
     if(!data){
       return null
     }
@@ -105,11 +166,24 @@ this.fetchSearchcategory();
       <div className="App">
         <header className="app-header">
           
-          <h1 className="app-title">ACME CATEGORIES</h1>
+          <h1 className="app-title">ACME-{position==="products"?"PRODUCTS":"CATEGORIES"}</h1>
         </header>
         <div className="data-container">
         <span className="coyote-img"></span>
-        {position==="products"?<span className="products-table"><Products list={data} /></span>:<span className="categories-table"><Categories list={data} handleClick={this.handleClick}/></span>}
+        {position==="products"?<span className="products-table">
+        <Products list={data} returnButton={this.returnButtonHandle}/></span>
+        :
+        <span className="categories-table"><Categories list={data}
+        
+         SearchHandleClick={this.SearchHandleClick} 
+         DeleteHandleClick={this.DeleteHandleClick} 
+         AddCategory={this.AddCategory}/>
+           <span className="category-form">
+             <input type="text" name="inName" value={this.state.inName} onChange={this.handleChange} className="form-control" id="name-category"  placeholder="Name"/>
+             <input type="text" name="inDescription" value={this.state.inDescription} onChange={this.handleChange} className="form-control" id="des-category" placeholder="Description" />
+             <button type="button" onClick={this.AddCategory} className="btn btn-primary btn-add-category" ><i className="material-icons" >playlist_add</i></button>
+           </span>
+         </span>}
         
 
         </div>
